@@ -22,5 +22,7 @@ from EndPoint import views
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
-    path('testing/', views.drink_list)
+    path('setup/', views.setupPayement),
+    path('execute/', views.executepayement),
+    path('testing/', views.testing),
 ]
