@@ -24,5 +24,4 @@ from EndPoint import views
 urlpatterns = [
     path('setup/', views.setupPayement),
     path('execute/', views.executepayement),
-    path('testing/', views.testing),
 ]
