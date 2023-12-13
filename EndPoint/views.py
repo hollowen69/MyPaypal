@@ -94,33 +94,35 @@ def executepayement(request):
         auth=(Paypal_Client_ID, Paypal_Client_Key),
         )
         ResponseBody = json.loads(response.text)
-        if 'state' in ResponseBody and ResponseBody['state'] == 'approved':
-           # return Response({'message': 'Payment executed successfully'})
-           PulginId = requestBody['PluginId']
-           Accountemail = requestBody['Accountemail']
-           payementEmail = requestBody['payer']['payer_info']['email']
-           totalprice = requestBody['transactions'][0]['amount']['total']
-           currency = requestBody['transactions'][0]['amount']['currency']
-           PayementId = requestBody['id']
-           payementFee = requestBody['transactions'][0]['related_resources'][0]['sale']['transaction_fee']['value']
-           ExchangeRate = requestBody['transactions'][0]['related_resources'][0]['sale']['exchange_rate']
-           AmountReceived = requestBody['transactions'][0]['related_resources'][0]['sale']['receivable_amount']['value']
-           AmountReceivedCurrency = requestBody['transactions'][0]['related_resources'][0]['sale']['receivable_amount']['currency']
-           PayoutData = {
-                'PluginID' : PulginId,
-                'AccountEmail' : Accountemail,
-                'PayementEmail' : payementEmail,
-                'TotalPrice' : totalprice,
-                'Currency' : currency,
+        
+        #if 'state' in ResponseBody and ResponseBody['state'] == 'approved':
+        if response.ok and ResponseBody['state'] == 'approved' :
+            PluginId = requestBody['PluginId']
+            AccountEmail = requestBody['Accountemail']
+            PayementEmail = ResponseBody['payer']['payer_info']['email']
+            TotalPrice = ResponseBody['transactions'][0]['amount']['total']
+            Currency = ResponseBody['transactions'][0]['amount']['currency']
+            PayementId = ResponseBody['id']
+            PayementFee = ResponseBody['transactions'][0]['related_resources'][0]['sale']['transaction_fee']['value']
+            ExchangeRate = ResponseBody['transactions'][0]['related_resources'][0]['sale']['exchange_rate']
+            AmountReceived = ResponseBody['transactions'][0]['related_resources'][0]['sale']['receivable_amount']['value']
+            AmountReceivedCurrency = ResponseBody['transactions'][0]['related_resources'][0]['sale']['receivable_amount']['currency']
+            PayementData = {
+                'PluginId' : PluginId,
+                'AccountEmail' : AccountEmail,
+                'PayementEmail' : PayementEmail,
+                'TotalPrice' : TotalPrice,
+                'Currency' : Currency,
                 'PayementID' : PayementId,
-                'PayementFee' : payementFee,
+                'PayementFee' : PayementFee,
                 'ExchangeRate' : ExchangeRate,
                 'AmountReceived' : AmountReceived,
                 'AmountReceivedCurrency' : AmountReceivedCurrency
 
             }
-           add_data_to_firestore('Payement', PayoutData)
-           return Response(response.json())
+            add_data_to_firestore('Payement', PayementData)
+            # return Response({'message': 'Payment executed successfully'})
+            return Response(response.json())
         else:
             return Response({'error': 'Invalid PayPal response'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -131,10 +133,9 @@ def executepayement(request):
 @api_view(['Post'])
 def createpayouts(request):
     RequestBody =  json.loads(request.body)
-    recepientEmail = RequestBody["recipientEmail"]
-    price = RequestBody["price"]
-    PulginId = RequestBody["PulginId"]
-    date = datetime.today().strftime('%Y-%m-%d')
+    RecepientEmail = RequestBody["RecipientEmail"]
+    Price = RequestBody["Price"]
+    #PluginId = RequestBody["PluginId"]
     data = {
         'grant_type': 'client_credentials',
         }
@@ -147,22 +148,46 @@ def createpayouts(request):
             'Authorization': f'Bearer {access_token}'
         }
     
-    data2 = { "sender_batch_header": { 
+    json_data = { "sender_batch_header": { 
        # "sender_batch_id": "Payouts_2020_100007", 
         "email_subject": "You have a payout!", 
         "email_message": "You have received a payout! Thanks for using our service!" }, 
         "items": [ 
             { "recipient_type": "EMAIL", 
                 "amount": {
-                 "value": price, 
+                 "value": Price, 
                  "currency": "USD" 
                  }, 
-                "receiver": recepientEmail } ] 
+                "receiver": RecepientEmail } ] 
         }
-    response = requests.post('https://api-m.sandbox.paypal.com/v1/payments/payouts', headers=headers, json=data2)
-    if response.ok:
+    ExecutePayout = requests.post('https://api-m.sandbox.paypal.com/v1/payments/payouts', headers=headers, json=json_data)
+    
+    if ExecutePayout.ok:
+        ExecutePayoutBody = json.loads(ExecutePayout.text)
+        PayoutBatchID = ExecutePayoutBody['batch_header']['payout_batch_id']
+        params = (
+             ('page', '1'),
+            )
+        PayoutInfo = requests.get('https://api-m.sandbox.paypal.com/v1/payments/payouts/'+ PayoutBatchID, headers=headers, params=params)
+        PayoutInfoData = json.loads(PayoutInfo.text)
+        Amount = PayoutInfoData['batch_header']['amount']['value']
+        AmountCurrency = PayoutInfoData['batch_header']['amount']['currency']
+        Fee = PayoutInfoData['batch_header']['fees']['value']
+        FeeCurrency = PayoutInfoData['batch_header']['fees']['currency']
+
+        PayoutDate = datetime.today().strftime('%Y-%m-%d')
+        PayoutData = {
+            'PayoutBatchID' : PayoutBatchID,
+            'RecepientEmail' : RecepientEmail,
+            'PayoutDate' : PayoutDate,
+            'Fee' : Fee,
+            'FeeCurrency' : FeeCurrency,
+            'Amount' : Amount,
+            'AmountCurrency' : AmountCurrency
+        }
        # return Response(response.json())  # or do something with the successful response
-       return Response(response.json())
+        add_data_to_firestore('Payout', PayoutData)
+        return Response(PayoutInfo.json())
     else:
         return Response({"statuscode:":  response.status_code, "text" : response.text})
     

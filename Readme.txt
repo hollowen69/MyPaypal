@@ -1,23 +1,53 @@
-here are the packages that i used
-asgiref==3.7.2
-certifi==2023.7.22
-cffi==1.16.0
-charset-normalizer==3.3.2
-cryptography==41.0.5
-Django==4.2.7
-django-cors-headers==4.3.0
-django-environ==0.11.2
-django-rest-framework==0.1.0
-djangorestframework==3.14.0
-idna==3.4
-paypalrestsdk==1.13.3
-pycparser==2.21
-pyOpenSSL==23.3.0
-pytz==2023.3.post1
-requests==2.31.0
-six==1.16.0
-sqlparse==0.4.4
-tzdata==2023.3
-urllib3==2.0.7
+1-to run this project you need to create a virtual environment :
 
-to run project simply run the following commande  : python manage.py runserver
+       python -m venv <virtualenvironmentname>
+
+2-activate the virtual environment :
+
+        <virtualenvironmentname>\Scripts\activate
+
+3-while in virtual environment run the following commande to install the packages:
+
+        pip install -r requirements.txt
+
+4-while in virtual environment run the following commande to run the server while terminal in the parent folder :
+
+        python manage.py runserver
+
+
+
+
+
+
+
+
+the api is devided into 3 parts (all are POST):
+     - http://127.0.0.1:8000/setup/ is used to setup the payement .
+     
+     it takes in the body
+      {   
+ 
+    "price" : 420
+    }
+
+
+    - http://127.0.0.1:8000/execute/ to execute the payement 
+   
+    it takes in the body 
+
+     {
+            "PluginId" : "123456789",
+            "Accountemail" : "njnjnjnjjnj",
+            "paymentId" : "Check Url Params ON success ",
+            "payerId" : "Check Url Params ON success"
+          }
+    
+
+    - http://127.0.0.1:8000/payout/ to execute payout 
+
+    it takes in the body 
+    {
+    "RecipientEmail" : "",
+    "Price" : 
+}
+
