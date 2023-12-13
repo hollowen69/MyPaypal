@@ -191,14 +191,7 @@ def createpayouts(request):
     else:
         return Response({"statuscode:":  response.status_code, "text" : response.text})
     
-@api_view(['Post'])
-def testingFB(request) :
-    example_data = {
-    'name': 'John Doe',
-    'email': 'johndoe@example.com',
-    'age': 30
-    }
-    add_data_to_firestore('tetsing', example_data)
+
 
 
 

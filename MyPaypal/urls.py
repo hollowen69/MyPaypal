@@ -24,6 +24,4 @@ from EndPoint import views
 urlpatterns = [
     path('setup/', views.setupPayement),
     path('execute/', views.executepayement),
-    path('payout/', views.createpayouts),
-    path('FB/',views.testingFB)
-]
+    path('payout/', views.createpayouts)
